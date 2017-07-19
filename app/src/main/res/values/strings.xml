@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MyBlog</string>
+    <string name="title_activity_fetch_blogs">FetchBlogs</string>
+</resources>
