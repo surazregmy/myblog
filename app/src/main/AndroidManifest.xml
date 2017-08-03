@@ -22,6 +22,7 @@
             android:name=".FetchBlogs"
             android:label="@string/title_activity_fetch_blogs"
             android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".BlogPost"></activity>
     </application>
 
 </manifest>

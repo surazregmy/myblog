@@ -1,6 +1,7 @@
 package com.example.suraz.myblog;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -31,12 +32,13 @@ import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.List;
 
-public class FetchBlogs extends AppCompatActivity {
+public class FetchBlogs extends AppCompatActivity implements OnDataReceived{
 
     ListView listView ;
     HttpURLConnection urlConnection;
     ProgressDialog progressDialog;
     List<Post> posts = new LinkedList<>();
+    PostListAdapter adapter;
 
 
 
@@ -55,8 +57,9 @@ public class FetchBlogs extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                Intent intent = new Intent(FetchBlogs.this,BlogPost.class);
+                startActivity(intent);
+
             }
         });
 
@@ -64,13 +67,59 @@ public class FetchBlogs extends AppCompatActivity {
         System.out.println("HElLO");
         System.out.println(posts);
         viewList();
+
     }
     public void viewList() {
-        final PostListAdapter adapter = new PostListAdapter(getApplicationContext(), posts);
+         adapter = new PostListAdapter(getApplicationContext(), posts);
         listView.setAdapter(adapter);
+
+
     }
 
-    private class FetchServerData extends AsyncTask<String, Void, JSONArray> {
+    @Override
+    public void dataReceived(String s) {
+        JSONArray jsonArray=null;
+        try {
+//            JSONObject obj = new JSONObjectect(s);
+            jsonArray = new JSONArray(s);
+
+        for (int i=0; i < jsonArray.length(); i++){
+            System.out.println("I am inside the loop");
+            JSONObject jsonObject = jsonArray.getJSONObject(i);
+            JSONObject titleobject =jsonObject.getJSONObject("title");
+            JSONObject excerptObject = jsonObject.getJSONObject("excerpt");
+
+            String title = titleobject.getString("rendered");
+            String excerpt = excerptObject.getString("rendered");
+            String author = jsonObject.getString("author");
+
+            String authorname="";
+            if(author.equals("1")){
+                authorname= "suraj";
+            }
+
+//                    String testexcerpt = "bb";
+
+            String testexcerpt = Jsoup.parse(excerpt).text();
+
+
+
+            System.out.println(testexcerpt);
+            Post post1 = new Post(i,title,testexcerpt,authorname);
+            posts.add(post1);
+
+
+        }} catch (JSONException e) {
+            e.printStackTrace();
+        }
+        adapter.notifyDataSetChanged();
+
+
+    }
+
+
+
+    private class FetchServerData extends AsyncTask<String, Void, String> {
 
         @Override
         protected void onPreExecute(){
@@ -83,9 +132,10 @@ public class FetchBlogs extends AppCompatActivity {
         }
 
         @Override
-        protected JSONArray doInBackground(String... strings) {
+        protected String doInBackground(String... strings) {
             JSONArray jsonArray = null;
             BufferedReader reader;
+            String rstring = null;
 
             try {
                 URL url = new URL("http://surajregmi.com.np/wp-json/wp/v2/posts");
@@ -103,6 +153,7 @@ public class FetchBlogs extends AppCompatActivity {
                     System.out.println(">>>>>>>>>>");
                     buffer.append(line);
                 }
+                rstring = buffer.toString();
                 System.out.println("Buffere = "+ buffer.toString());
                 jsonArray = new JSONArray(buffer.toString());
 
@@ -110,6 +161,8 @@ public class FetchBlogs extends AppCompatActivity {
                 System.out.println("THE JSON Array is here ==> ");
                 System.out.println(jsonArray);
                 System.out.println(jsonArray.length());
+
+
 
 
 
@@ -137,10 +190,12 @@ public class FetchBlogs extends AppCompatActivity {
 
                     System.out.println(testexcerpt);
                     Post post1 = new Post(i,title,testexcerpt,authorname);
-                    posts.add(post1);
+                   // posts.add(post1);
 
 
                 }
+
+
 
 
 
@@ -153,16 +208,23 @@ public class FetchBlogs extends AppCompatActivity {
             }
 
 
-            return null;
+            return rstring;
         }
 
         @Override
-        protected void onPostExecute(JSONArray jsonArray){
-            super.onPostExecute(jsonArray);
-            System.out.println(jsonArray);
+        protected void onPostExecute(String s){
+//            super.onPostExecute(jsonArray);
+//            System.out.println(jsonArray);
             Toast.makeText(FetchBlogs.this, "completed", Toast.LENGTH_SHORT).show();
             progressDialog.dismiss();
+            System.out.println("The string is " + s);
+            dataReceived(s);
         }
     }
+
+}
+
+interface OnDataReceived{
+    public void dataReceived(String s);
 
 }
